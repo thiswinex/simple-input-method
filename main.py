@@ -1,43 +1,7 @@
 import os, json
 
-
-# Data input:
-file = open("./homework/pinyin_dict/pinyin_dict_utf.txt", encoding="utf-8")
-
-# Define the variable:
-strs = file.readlines()
-file.close()
-py_dict = {}
-file1 = open("./counter1_dict.txt", encoding="utf-8")
-file2 = open("./counter2_dict.txt", encoding="utf-8")
-counter1_dict = json.loads(file1.readline()) # 1 character freq
-counter2_dict = json.loads(file2.readline()) # 2 character freq
-counter_total = 396639694
-lam = 0.8 # define the lambda for smoothing algorithm
-
-
-# Pinyin dict input:
-for i in range(len(strs)):
-    key_n_value = strs[i].split(' ', 1)
-    py_dict.update({key_n_value[0]: key_n_value[1][:-1]})
-
-#  --- Input transfer ---
-input = "chen si yuan"
-input_spilt = input.split(" ")
-print(input_spilt)
-
-graph = []
-
-# Build the graph:
-for i in range(len(input_spilt)):
-    graph_list = []
-    for j in range(0, len( py_dict[input_spilt[i]] ), 2):
-        graph_list.append( {'char':py_dict[input_spilt[i]][j], 'value': 0, 'pre_dict': None})
-    graph.append(graph_list)
-    # graph's type: graph[layers][char_num] = {'char': char, 'value': freq, 'pre_dict': dict}
-
-
-def cal_cond_prob(char_a, char_b): # use frequency to replace probability
+def cal_cond_prob(char_a, char_b, counter1_dict, counter2_dict): 
+    """use frequency to replace probability, return conditional probability of the charactor"""
     cond_prob = 0
     try:
         prob_ab = counter2_dict[char_a][char_b] / counter_total
@@ -54,7 +18,7 @@ def cal_cond_prob(char_a, char_b): # use frequency to replace probability
     return char_prob
 
 
-def find_ans():
+def find_ans(graph, counter1_dict, counter2_dict):
     for layer in range(len(graph)):
         if layer == 0:
             for dict in graph[layer]:
@@ -65,7 +29,7 @@ def find_ans():
                 max_value = 0
                 pre_dict = None
                 for dict_pre in graph[layer - 1]:
-                    new_value = dict_pre['value'] * cal_cond_prob(dict_pre['char'], dict['char'])
+                    new_value = dict_pre['value'] * cal_cond_prob(dict_pre['char'], dict['char'], counter1_dict, counter2_dict)
                     if new_value > max_value:
                         max_value = new_value
                         pre_dict = dict_pre
@@ -92,15 +56,45 @@ def find_ans():
     #print(graph)
 
 
+if __name__ == "__main__":
+    # Data input:
+    file = open("./resource/pinyin_dict/pinyin_dict_utf.txt", encoding="utf-8")
 
-find_ans()
+    # Define the variable:
+    strs = file.readlines()
+    file.close()
+    py_dict = {}
+    file1 = open("./counter1_dict.txt", encoding="utf-8")
+    file2 = open("./counter2_dict.txt", encoding="utf-8")
+    counter1_dict = json.loads(file1.readline()) # 1 character freq
+    counter2_dict = json.loads(file2.readline()) # 2 character freq
+    counter_total = 396639694
+    lam = 0.8 # define the lambda for smoothing algorithm
 
 
-'''
-for i in range(99):
-    print(str(lam)+"  ", end='')
-    find_ans()
-    lam += 0.01
-'''
+    # Pinyin dict input:
+    for i in range(len(strs)):
+        key_n_value = strs[i].split(' ', 1)
+        py_dict.update({key_n_value[0]: key_n_value[1][:-1]})
+
+    #  --- Input transfer ---
+    input = "chen si yuan"
+    input_spilt = input.split(" ")
+    print(input_spilt)
+
+    graph = []
+
+    # Build the graph:
+    for i in range(len(input_spilt)):
+        graph_list = []
+        for j in range(0, len( py_dict[input_spilt[i]] ), 2):
+            graph_list.append( {'char':py_dict[input_spilt[i]][j], 'value': 0, 'pre_dict': None})
+        graph.append(graph_list)
+        # graph's type: graph[layers][char_num] = {'char': char, 'value': freq, 'pre_dict': dict}
+
+    find_ans(graph, counter1_dict, counter2_dict)
+
+
+
 
 
